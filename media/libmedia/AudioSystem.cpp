@@ -372,6 +372,12 @@ unsigned int AudioSystem::getInputFramesLost(audio_io_handle_t ioHandle) {
     return result;
 }
 
+status_t AudioSystem::setFmVolume(float value) {
+	const sp<IAudioFlinger>& af = AudioSystem::get_audio_flinger();
+	if (af == 0) return PERMISSION_DENIED;
+	return af->setFmVolume(value);
+}
+
 int AudioSystem::newAudioSessionId() {
     const sp<IAudioFlinger>& af = AudioSystem::get_audio_flinger();
     if (af == 0) return 0;
@@ -518,6 +524,7 @@ status_t AudioSystem::setDeviceConnectionState(audio_devices device,
                                                   device_connection_state state,
                                                   const char *device_address)
 {
+    LOGV("setDeviceConnectionState: %d", device);
     const sp<IAudioPolicyService>& aps = AudioSystem::get_audio_policy_service();
     if (aps == 0) return PERMISSION_DENIED;
 
@@ -754,6 +761,16 @@ bool AudioSystem::isInputDevice(audio_devices device)
     }
 }
 
+bool AudioSystem::isFmDevice(audio_devices device)
+{
+    if ((popCount(device) == 1) &&
+        ((device & ~AudioSystem::DEVICE_OUT_FM_ALL) == 0)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 bool AudioSystem::isA2dpDevice(audio_devices device)
 {
     if ((popCount(device) == 1 ) &&
@@ -849,6 +866,8 @@ const char *AudioParameter::keyFormat = "format";
 const char *AudioParameter::keyChannels = "channels";
 const char *AudioParameter::keyFrameCount = "frame_count";
 const char *AudioParameter::keyInputSource = "input_source";
+const char *AudioParameter::keyFmOn = "fm_on";
+const char *AudioParameter::keyFmOff = "fm_off";
 
 AudioParameter::AudioParameter(const String8& keyValuePairs)
 {

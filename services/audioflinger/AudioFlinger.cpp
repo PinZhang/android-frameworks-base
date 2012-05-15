@@ -129,7 +129,7 @@ static bool settingsAllowed() {
 
 AudioFlinger::AudioFlinger()
     : BnAudioFlinger(),
-        mAudioHardware(0), mMasterVolume(1.0f), mMasterMute(false), mNextUniqueId(1)
+        mAudioHardware(0), mMasterVolume(1.0f), mMasterMute(false), mNextUniqueId(1), mFmOn(false)
 {
     mHardwareStatus = AUDIO_HW_IDLE;
 
@@ -624,6 +624,11 @@ bool AudioFlinger::isStreamActive(int stream) const
             return true;
         }
     }
+
+    if (mFmOn && stream == AudioSystem::MUSIC) {
+        return true;
+    }
+
     return false;
 }
 
@@ -660,6 +665,29 @@ status_t AudioFlinger::setParameters(int ioHandle, const String8& keyValuePairs)
         }
     }
 #endif
+
+    AudioParameter param = AudioParameter(keyValuePairs);
+    String8 key = String8(AudioParameter::keyRouting);
+    int device;
+    if (param.getInt(key, device) == NO_ERROR) {
+        if ((device & AudioSystem::DEVICE_OUT_FM_ALL) && mFmOn == false) {
+            mFmOn = true;
+        } else {
+			mFmOn = false;
+		}
+    }
+
+	String8 fmOnKey = String8(AudioParameter::keyFmOn);
+	String8 fmOffKey = String8(AudioParameter::keyFmOff);
+	if (param.getInt(fmOnKey, device) == NO_ERROR) {
+		mFmOn = true;
+		// Call hardware to switch fm on/off
+		mAudioHardware->setParameters(keyValuePairs);
+	} else {
+		mFmOn = false;
+		// Call hardware to switch fm on/off
+		mAudioHardware->setParameters(keyValuePairs);
+	}
 
     // ioHandle == 0 means the parameters are global to the audio hardware interface
     if (ioHandle == 0) {
@@ -766,6 +794,24 @@ status_t AudioFlinger::getRenderPosition(uint32_t *halFrames, uint32_t *dspFrame
     }
 
     return BAD_VALUE;
+}
+
+status_t AudioFlinger::setFmVolume(float value)
+{
+    status_t ret;
+
+	// Check calling permission
+	if (!settingsAllowed()) {
+		return PERMISSION_DENIED;
+	}
+
+	AutoMutex loc(mHardwareLock);
+	mHardwareStatus =  AUDIO_SET_FM_VOLUME;
+	ret = mAudioHardware->setFmVolume(value);
+
+	mHardwareStatus = AUDIO_HW_IDLE;
+
+	return ret;
 }
 
 void AudioFlinger::registerClient(const sp<IAudioFlingerClient>& client)

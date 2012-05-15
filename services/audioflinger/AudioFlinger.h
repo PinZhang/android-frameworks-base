@@ -158,6 +158,8 @@ public:
 
     virtual status_t getEffectDescriptor(effect_uuid_t *pUuid, effect_descriptor_t *descriptor);
 
+	virtual status_t setFmVolume(float value);
+
     virtual sp<IEffect> createEffect(pid_t pid,
                         effect_descriptor_t *pDesc,
                         const sp<IEffectClient>& effectClient,
@@ -187,6 +189,7 @@ public:
         AUDIO_HW_SET_MIC_MUTE,
         AUDIO_SET_VOICE_VOLUME,
         AUDIO_SET_PARAMETER,
+		AUDIO_SET_FM_VOLUME,
     };
 
     // record interface
@@ -601,6 +604,7 @@ private:
         virtual     String8     getParameters(const String8& keys);
         virtual     void        audioConfigChanged_l(int event, int param = 0);
         virtual     status_t    getRenderPosition(uint32_t *halFrames, uint32_t *dspFrames);
+
                     int16_t     *mixBuffer() { return mMixBuffer; };
 
                     sp<EffectHandle> createEffect_l(
@@ -1189,6 +1193,8 @@ private:
                 int mLifeVibesClientPid;
 #endif
                 uint32_t mMode;
+
+                bool mFmOn;
 
 };
 

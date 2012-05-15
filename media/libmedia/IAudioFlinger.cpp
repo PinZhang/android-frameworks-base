@@ -70,7 +70,8 @@ enum {
     QUERY_EFFECT,
     GET_EFFECT_DESCRIPTOR,
     CREATE_EFFECT,
-    MOVE_EFFECTS
+    MOVE_EFFECTS,
+	SET_FM_VOLUME
 };
 
 class BpAudioFlinger : public BpInterface<IAudioFlinger>
@@ -688,6 +689,15 @@ public:
         remote()->transact(MOVE_EFFECTS, data, &reply);
         return reply.readInt32();
     }
+
+	virtual status_t setFmVolume(float volume)
+	{
+		Parcel data, reply;
+		data.writeInterfaceToken(IAudioFlinger::getInterfaceDescriptor());
+		data.writeFloat(volume);
+		remote()->transact(SET_FM_VOLUME, data, &reply);
+		return reply.readInt32();
+	}
 };
 
 IMPLEMENT_META_INTERFACE(AudioFlinger, "android.media.IAudioFlinger");
